@@ -1,0 +1,50 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <semaphore.h>
+
+int valeur = 0; // Valeur partagée
+int n;          // Limite positive et négative
+sem_t sem_incr, sem_decr; // Sémaphores pour synchroniser les threads
+
+void *fonction_incrementation(void *arg) {
+    while (valeur < n) {
+        sem_wait(&sem_incr);
+        valeur++;
+        printf("Thread 1 (Incrémentation) : valeur = %d\n", valeur);
+        sem_post(&sem_decr);
+    }
+    return NULL;
+}
+
+void *fonction_decrementation(void *arg) {
+    while (valeur > -n) {
+        sem_wait(&sem_decr);
+        valeur--;
+        printf("Thread 2 (Décrémentation) : valeur = %d\n", valeur);
+        sem_post(&sem_incr);
+    }
+    return NULL;
+}
+
+int main() {
+    printf("Entrez la valeur de n : ");
+    scanf("%d", &n);
+
+    pthread_t thread1, thread2;
+
+    sem_init(&sem_incr, 0, 1);
+    sem_init(&sem_decr, 0, 0);
+
+    pthread_create(&thread1, NULL, fonction_incrementation, NULL);
+    pthread_create(&thread2, NULL, fonction_decrementation, NULL);
+
+    pthread_join(thread1, NULL);
+    pthread_join(thread2, NULL);
+
+    sem_destroy(&sem_incr);
+    sem_destroy(&sem_decr);
+
+    printf("Programme terminé. Valeur finale : %d\n", valeur);
+    return 0;
+}
